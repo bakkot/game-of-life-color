@@ -343,3 +343,100 @@ class GameOfLifeRenderer {
 ```
 
 Now, the `handleMouseMove` event compares the calculated cell coordinates with the previous cell coordinates (`prevCellX` and `prevCellY`). The cell state toggling and canvas re-drawing only occur when the cursor enters a new cell. The previous cell coordinates are reset to `null` in the `handleMouseUp` event. With these changes, cells are only updated once when you first drag the cursor over them.
+
+## user
+
+Now make it so that when I hit "space" it toggles whether the game is running. When paused I should still be able to update it with the mouse, but it should not start running again until I hit "space" again.
+
+## bot
+
+To toggle the game state when pressing the "space" key, you can add a `keydown` event listener to the document. Within the event handler, check if the pressed key is "space", and then either pause or resume the game accordingly. Here's the updated code:
+
+```javascript
+class GameOfLifeRenderer {
+  constructor(gameOfLife, canvas, cellSize = 10) {
+    // ...previous constructor code...
+    this.gameRunning = false;
+    document.addEventListener('keydown', this.handleKeyDown.bind(this));
+  }
+
+  // ...previous methods...
+
+  handleKeyDown(event) {
+    if (event.code === 'Space') {
+      this.gameRunning = !this.gameRunning;
+
+      if (this.gameRunning) {
+        this.startGameLoop();
+      } else {
+        clearInterval(this.interval);
+      }
+    }
+  }
+
+  startGameLoop() {
+    this.interval = setInterval(() => {
+      gameOfLife.update();
+      this.drawGrid();
+    }, 200);
+  }
+
+  handleMouseUp() {
+    this.drawing = false;
+    this.prevCellX = null;
+    this.prevCellY = null;
+    // Only restart the game loop if the game was running before
+    if (this.gameRunning) {
+      this.startGameLoop();
+    }
+  }
+}
+
+const renderer = new GameOfLifeRenderer(gameOfLife, canvas);
+renderer.drawGrid();
+
+// Start the initial game loop
+renderer.startGameLoop();
+```
+
+A `gameRunning` variable is added to the `GameOfLifeRenderer` class to track and toggle the game state when the "space" key is pressed. If the game is paused, the `handleMouseUp` event won't start the game loop again; it will only start when the "space" key is pressed.
+
+Also, a new method `startGameLoop` is added to the `GameOfLifeRenderer` class to start the game loop. This method is called at the end of the script to ensure the loop starts initially.
+
+With these changes, pressing the "space" key will toggle the paused state of the game, allowing you to still update cells with the mouse while it's paused without starting the game loop automatically.
+
+## user
+
+Shouldn't `gameRunning` be true as soon as I call startGameLoop? Right now it doesn't become true until I hit space.
+
+## bot
+
+Apologies for the oversight. You're correct; `gameRunning` should be set to `true` after calling `startGameLoop` initially. Modify the code as follows to ensure that `gameRunning` is properly set when the game starts:
+
+```javascript
+class GameOfLifeRenderer {
+  constructor(gameOfLife, canvas, cellSize = 10) {
+    // ...previous constructor code...
+    this.gameRunning = false;
+    document.addEventListener('keydown', this.handleKeyDown.bind(this));
+  }
+
+  // ...previous methods...
+
+  startGameLoop() {
+    this.gameRunning = true;
+    this.interval = setInterval(() => {
+      gameOfLife.update();
+      this.drawGrid();
+    }, 200);
+  }
+}
+
+const renderer = new GameOfLifeRenderer(gameOfLife, canvas);
+renderer.drawGrid();
+
+// Start the initial game loop
+renderer.startGameLoop();
+```
+
+With this modification, the `startGameLoop` method sets `gameRunning` to `true` before starting the loop. Now, `gameRunning` will be `true` as soon as you call `startGameLoop` initially.

@@ -103,7 +103,6 @@ class GameOfLifeRenderer {
     this.cellSize = cellSize;
 
     this.setCanvasSize();
-    this.canvas.addEventListener('click', this.handleClick.bind(this));
     this.drawing = false;
     this.prevCellX = null;
     this.prevCellY = null;
@@ -111,6 +110,8 @@ class GameOfLifeRenderer {
     this.canvas.addEventListener('mousemove', this.handleMouseMove.bind(this));
     this.canvas.addEventListener('mouseup', this.handleMouseUp.bind(this));
 
+    this.gameRunning = false;
+    document.addEventListener('keydown', this.handleKeyDown.bind(this));
   }
 
   setCanvasSize() {
@@ -173,9 +174,28 @@ class GameOfLifeRenderer {
     this.drawing = false;
     this.prevCellX = null;
     this.prevCellY = null;
-    // Restart the game interval when mouse is released
+    // Only restart the game loop if the game was running before
+    if (this.gameRunning) {
+      this.startGameLoop();
+    }
+  }
+
+  handleKeyDown(event) {
+    if (event.code === 'Space') {
+      this.gameRunning = !this.gameRunning;
+
+      if (this.gameRunning) {
+        this.startGameLoop();
+      } else {
+        clearInterval(this.interval);
+      }
+    }
+  }
+
+  startGameLoop() {
+    this.gameRunning = true;
     this.interval = setInterval(() => {
-      this.gameOfLife.update();
+      gameOfLife.update();
       this.drawGrid();
     }, 200);
   }
@@ -193,11 +213,6 @@ gameOfLife.randomizeGrid(0.25);
 // Render once to start with
 renderer.drawGrid();
 
-// Set up an interval to continuously update and render
-
-renderer.interval = setInterval(() => {
-  gameOfLife.update();
-  renderer.drawGrid();
-}, 200);
-</script>
+// Start the initial game loop
+renderer.startGameLoop();
 </script>
