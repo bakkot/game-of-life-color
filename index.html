@@ -85,6 +85,14 @@ class GameOfLife {
     }));
   }
 
+  toggleCell(x, y) {
+    const cell = this.grid[y][x];
+    cell.isAlive = !cell.isAlive;
+
+    if (cell.isAlive) {
+      cell.color = this.randomColor();
+    }
+  }
 }
 
 class GameOfLifeRenderer {
@@ -95,6 +103,14 @@ class GameOfLifeRenderer {
     this.cellSize = cellSize;
 
     this.setCanvasSize();
+    this.canvas.addEventListener('click', this.handleClick.bind(this));
+    this.drawing = false;
+    this.prevCellX = null;
+    this.prevCellY = null;
+    this.canvas.addEventListener('mousedown', this.handleMouseDown.bind(this));
+    this.canvas.addEventListener('mousemove', this.handleMouseMove.bind(this));
+    this.canvas.addEventListener('mouseup', this.handleMouseUp.bind(this));
+
   }
 
   setCanvasSize() {
@@ -115,6 +131,54 @@ class GameOfLifeRenderer {
       }
     }
   }
+
+  handleClick(event) {
+    const rect = this.canvas.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+
+    const cellX = Math.floor(x / this.cellSize);
+    const cellY = Math.floor(y / this.cellSize);
+
+    this.gameOfLife.toggleCell(cellX, cellY);
+    this.drawGrid();
+  }
+
+  handleMouseDown(event) {
+    this.drawing = true;
+    this.handleClick(event);
+    clearInterval(this.interval); // Clear the game interval to pause the game
+  }
+
+  handleMouseMove(event) {
+    if (this.drawing) {
+      const rect = this.canvas.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+
+      const cellX = Math.floor(x / this.cellSize);
+      const cellY = Math.floor(y / this.cellSize);
+
+      // If cursor enters a new cell, toggle the cell state and update previous cell coordinates
+      if (cellX !== this.prevCellX || cellY !== this.prevCellY) {
+        this.gameOfLife.toggleCell(cellX, cellY);
+        this.drawGrid();
+        this.prevCellX = cellX;
+        this.prevCellY = cellY;
+      }
+    }
+  }
+
+  handleMouseUp() {
+    this.drawing = false;
+    this.prevCellX = null;
+    this.prevCellY = null;
+    // Restart the game interval when mouse is released
+    this.interval = setInterval(() => {
+      this.gameOfLife.update();
+      this.drawGrid();
+    }, 200);
+  }
 }
 
 // Initialize Game of Life
@@ -130,7 +194,8 @@ gameOfLife.randomizeGrid(0.25);
 renderer.drawGrid();
 
 // Set up an interval to continuously update and render
-setInterval(() => {
+
+renderer.interval = setInterval(() => {
   gameOfLife.update();
   renderer.drawGrid();
 }, 200);
