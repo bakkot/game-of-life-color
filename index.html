@@ -19,7 +19,7 @@ class GameOfLife {
   }
 
   randomColor() {
-    return '#' + Math.floor(Math.random() * 16777215).toString(16);
+    return '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
   }
 
   update() {
@@ -122,7 +122,6 @@ class GameOfLifeRenderer {
   drawGrid() {
     for (let y = 0; y < this.gameOfLife.height; y++) {
       for (let x = 0; x < this.gameOfLife.width; x++) {
-          // console.log(this.gameOfLife.grid[y][x])
         if (this.gameOfLife.grid[y][x].isAlive) {
           this.ctx.fillStyle = this.gameOfLife.grid[y][x].color;
           this.ctx.fillRect(x * this.cellSize, y * this.cellSize, this.cellSize, this.cellSize);
