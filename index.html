@@ -1,0 +1,138 @@
+<!doctype html>
+<title>Color Game</title>
+<body>
+<canvas id="gameCanvas"></canvas>
+<script>
+class GameOfLife {
+  constructor(width, height) {
+    this.width = width;
+    this.height = height;
+    this.grid = this.createGrid();
+  }
+
+  createGrid() {
+    return new Array(this.height).fill(null).map(
+      () => new Array(this.width).fill(null).map(
+        () => ({ isAlive: false, color: this.randomColor() })
+      )
+    );
+  }
+
+  randomColor() {
+    return '#' + Math.floor(Math.random() * 16777215).toString(16);
+  }
+
+  update() {
+    const newGrid = this.createGrid();
+
+    for (let y = 0; y < this.height; y++) {
+      for (let x = 0; x < this.width; x++) {
+        const neighbors = this.getLiveNeighbors(x, y);
+        newGrid[y][x].isAlive = this.calculateAliveState(this.grid[y][x].isAlive, neighbors);
+        newGrid[y][x].color = this.calculateNewColor(x, y, neighbors);
+      }
+    }
+
+    this.grid = newGrid;
+  }
+
+  getLiveNeighbors(x, y) {
+    const neighbors = [];
+
+    for (let yOffset = -1; yOffset <= 1; yOffset++) {
+      for (let xOffset = -1; xOffset <= 1; xOffset++) {
+        if ((xOffset !== 0 || yOffset !== 0)
+          && this.isWithinBounds(x + xOffset, y + yOffset)
+          && this.grid[y + yOffset][x + xOffset].isAlive) {
+          neighbors.push(this.grid[y + yOffset][x + xOffset]);
+        }
+      }
+    }
+
+    return neighbors;
+  }
+
+  isWithinBounds(x, y) {
+    return y >= 0 && y < this.height && x >= 0 && x < this.width;
+  }
+
+  calculateAliveState(isAlive, neighbors) {
+    const liveCount = neighbors.length;
+    return (isAlive && liveCount === 2) || liveCount === 3;
+  }
+
+  calculateNewColor(x, y, neighbors) {
+    if (this.calculateAliveState(this.grid[y][x].isAlive, neighbors)) {
+      const liveCount = neighbors.length;
+      if (liveCount === 0) {
+        return this.grid[y][x].color;
+      }
+
+      const randomNeighbor = neighbors[Math.floor(Math.random() * liveCount)];
+      return randomNeighbor.color;
+    }
+
+    return this.randomColor();
+  }
+
+  randomizeGrid(liveFraction) {
+    this.grid = this.grid.map(row => row.map(cell => {
+      const randomValue = Math.random();
+      return {
+        isAlive: randomValue < liveFraction,
+        color: this.randomColor()
+      };
+    }));
+  }
+
+}
+
+class GameOfLifeRenderer {
+  constructor(gameOfLife, canvas, cellSize = 10) {
+    this.gameOfLife = gameOfLife;
+    this.canvas = canvas;
+    this.ctx = canvas.getContext('2d');
+    this.cellSize = cellSize;
+
+    this.setCanvasSize();
+  }
+
+  setCanvasSize() {
+    this.canvas.width = this.gameOfLife.width * this.cellSize;
+    this.canvas.height = this.gameOfLife.height * this.cellSize;
+  }
+
+  drawGrid() {
+    for (let y = 0; y < this.gameOfLife.height; y++) {
+      for (let x = 0; x < this.gameOfLife.width; x++) {
+          // console.log(this.gameOfLife.grid[y][x])
+        if (this.gameOfLife.grid[y][x].isAlive) {
+          this.ctx.fillStyle = this.gameOfLife.grid[y][x].color;
+          this.ctx.fillRect(x * this.cellSize, y * this.cellSize, this.cellSize, this.cellSize);
+        } else {
+          this.ctx.clearRect(x * this.cellSize, y * this.cellSize, this.cellSize, this.cellSize);
+        }
+      }
+    }
+  }
+}
+
+// Initialize Game of Life
+const gameOfLife = new GameOfLife(60, 40);
+
+// Get canvas element and initialize renderer
+const canvas = document.getElementById('gameCanvas');
+const renderer = new GameOfLifeRenderer(gameOfLife, canvas);
+
+gameOfLife.randomizeGrid(0.25);
+
+// Render once to start with
+renderer.drawGrid();
+
+// Set up an interval to continuously update and render
+setInterval(() => {
+  gameOfLife.update();
+  renderer.drawGrid();
+}, 200);
+</script>
+</script>
